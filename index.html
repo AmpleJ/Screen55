@@ -3,111 +3,306 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fantasy Character Manager</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap" />
-  <link rel="stylesheet" href="style.css" />
+  <title>Alley's DM Screen v0.6.72.15</title>
+  <link rel="stylesheet" href="styles.css" />
   <style>
-    body {
+    @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible&display=swap');
+    * {
+      font-family: 'Atkinson Hyperlegible', Arial, sans-serif;
+      box-sizing: border-box;
+    }
+    html, body {
       margin: 0;
-      font-family: 'MedievalSharp', Arial, sans-serif;
-      background: url('https://www.transparenttextures.com/patterns/old-mathematics.png');
-      background-color: #f5e6c8;
-      overflow: hidden;
+      padding: 0;
+      height: 100%;
+      background: url('https://www.transparenttextures.com/patterns/dark-fantasy.png');
     }
-    canvas {
-      position: absolute;
-      top: 0;
-      left: 0;
-      z-index: -1;
-    }
-    .controls {
-      position: fixed;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #fff8dc;
-      border: 3px solid #5c3b1e;
-      border-radius: 12px;
-      padding: 10px 20px;
+    #controls {
+      padding: 1rem;
+      background: #222;
+      color: #fff;
       display: flex;
-      gap: 10px;
-      box-shadow: 0 0 10px #00000088;
+      gap: 1rem;
+    }
+    #canvas {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      padding: 1rem;
+      min-height: calc(100vh - 60px);
+      background: linear-gradient(to bottom, #333, #000);
     }
     .instance {
-      width: 25vw;
-      aspect-ratio: 3/4;
+      border: 3px ridge #000;
       background: #fff;
-      border: 4px solid #8b5a2b;
-      border-radius: 12px;
-      box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
-      padding: 10px;
+      padding: 1rem;
+      margin: 1rem;
+      width: 423.36px;
+      min-height: 336px;
+      position: relative;
       resize: both;
       overflow: auto;
-      display: grid;
-      grid-template-rows: auto auto auto auto auto 1fr;
-      gap: 10px;
     }
-    .instance h2 {
-      text-align: center;
-      font-size: 1.4em;
-      margin: 0;
-    }
-    .table, .spell-slots, .text-area-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 5px;
-      text-align: center;
-    }
-    .spell-slots {
-      grid-template-columns: repeat(9, 1fr);
-    }
-    .text-area-grid {
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(2, auto);
-    }
-    .cell, input, select, textarea {
-      padding: 4px;
-      border-radius: 5px;
-      border: 1px solid #444;
-      text-align: center;
+    .instance input[type="text"], .instance select, .instance input[type="number"], .instance textarea {
       width: 100%;
+      padding: 0.25rem;
+      margin-bottom: 0.5rem;
+      text-align: center;
+      background: #fff;
+      color: #000;
     }
-    .draggable {
+    .instance textarea {
+      text-align: left;
+    }
+    .instance table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    .instance th, .instance td {
+      border: 1px solid #000;
+      text-align: center;
+      padding: 0.25rem;
+      background: #fff;
+      color: #000;
+    }
+    .instance th input[type="text"] {
+      width: 100%;
+      text-align: center;
+      border: none;
+      background: none;
+      color: inherit;
+    }
+    .close-btn {
       position: absolute;
-      cursor: move;
-    }
-    .hover-box {
-      position: absolute;
-      background: #f0e6d6;
-      padding: 4px;
-      border: 1px solid #333;
-      display: none;
-      font-size: 0.8em;
-      pointer-events: none;
-    }
-    button {
-      font-family: 'MedievalSharp', Arial;
-      padding: 6px 12px;
-      border-radius: 6px;
-      border: 2px solid #5c3b1e;
-      background: #eedfcc;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: #ff5c5c;
+      border: none;
+      color: white;
+      font-weight: bold;
       cursor: pointer;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      line-height: 20px;
+      text-align: center;
     }
-    button:hover {
-      background: #f4d8b8;
-    }
-    select {
-      font-family: 'MedievalSharp', Arial;
-    }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <canvas id="backgroundCanvas"></canvas>
-  <div class="controls">
-    <button onclick="addInstance()">➕ Add</button>
-    <button onclick="removeInstance()">➖ Subtract</button>
+  <div id="controls">
+    <button onclick="addInstance()">Add</button>
+    <button onclick="removeInstance()">Subtract</button>
   </div>
-  <div id="instanceContainer"></div>
-  <script src="app.js"></script>
+  <div id="canvas"></div>
+
+  <script>
+    let instanceCount = 0;
+    const themes = [
+      { name: "High Fantasy", primary: "#ffffff", secondary: "#e6e6e6", accent: "#000000", grid: "#cccccc", tableHeader: "#999999", textColor: "#000000", statsNotesColor: "#333333" },
+      { name: "Shadow Panther", primary: "#212121", secondary: "#424242", accent: "#ffffff", grid: "#616161", tableHeader: "#757575", textColor: "#ffffff", statsNotesColor: "#ffffff" },
+      { name: "Arctic Owlbear", primary: "#dcdcdc", secondary: "#e0f7fa", accent: "#000000", grid: "#b2ebf2", tableHeader: "#80deea", textColor: "#000000", statsNotesColor: "#006064" },
+      { name: "Necrotic Slime", primary: "#1a1a1a", secondary: "#333333", accent: "#ffffff", grid: "#4d4d4d", tableHeader: "#666666", textColor: "#ffffff", statsNotesColor: "#00e676" },
+      { name: "Inferno Drake", primary: "#b71c1c", secondary: "#e53935", accent: "#ffeb3b", grid: "#f44336", tableHeader: "#d32f2f", textColor: "#ffffff", statsNotesColor: "#ffeb3b" },
+      { name: "Celestial Griffin", primary: "#303f9f", secondary: "#5c6bc0", accent: "#c5cae9", grid: "#7986cb", tableHeader: "#3949ab", textColor: "#ffffff", statsNotesColor: "#c5cae9" },
+      { name: "Swamp Troll", primary: "#4caf50", secondary: "#81c784", accent: "#ffeb3b", grid: "#a5d6a7", tableHeader: "#66bb6a", textColor: "#ffffff", statsNotesColor: "#ffeb3b" },
+      { name: "Ethereal Wraith", primary: "#9c27b0", secondary: "#ba68c8", accent: "#ffffff", grid: "#ce93d8", tableHeader: "#ab47bc", textColor: "#ffffff", statsNotesColor: "#ffffff" },
+      { name: "Storm Giant", primary: "#1976d2", secondary: "#64b5f6", accent: "#bbdefb", grid: "#90caf9", tableHeader: "#42a5f5", textColor: "#ffffff", statsNotesColor: "#bbdefb" },
+      { name: "Blazing Phoenix", primary: "#f44336", secondary: "#ef5350", accent: "#ffeb3b", grid: "#e57373", tableHeader: "#e53935", textColor: "#ffffff", statsNotesColor: "#ffeb3b" },
+      { name: "Venomous Hydra", primary: "#4caf50", secondary: "#81c784", accent: "#ffeb3b", grid: "#a5d6a7", tableHeader: "#66bb6a", textColor: "#ffffff", statsNotesColor: "#ffeb3b" },
+      { name: "Frost Wyvern", primary: "#00acc1", secondary: "#4dd0e1", accent: "#ffffff", grid: "#80deea", tableHeader: "#26c6da", textColor: "#ffffff", statsNotesColor: "#ffffff" },
+      { name: "Golden Gryphon", primary: "#ffeb3b", secondary: "#fff176", accent: "#000000", grid: "#fff59d", tableHeader: "#ffee58", textColor: "#000000", statsNotesColor: "#000000" },
+      { name: "Mystic Unicorn", primary: "#9c27b0", secondary: "#ba68c8", accent: "#ffffff", grid: "#ce93d8", tableHeader: "#ab47bc", textColor: "#ffffff", statsNotesColor: "#ffffff" },
+      { name: "Emerald Dragon", primary: "#4caf50", secondary: "#81c784", accent: "#ffeb3b", grid: "#a5d6a7", tableHeader: "#66bb6a", textColor: "#ffffff", statsNotesColor: "#ffeb3b" },
+      { name: "Crimson Minotaur", primary: "#d32f2f", secondary: "#e57373", accent: "#ffeb3b", grid: "#ef9a9a", tableHeader: "#f44336", textColor: "#ffffff", statsNotesColor: "#ffeb3b" },
+      { name: "Sapphire Leviathan", primary: "#1976d2", secondary: "#64b5f6", accent: "#bbdefb", grid: "#90caf9", tableHeader: "#42a5f5", textColor: "#ffffff", statsNotesColor: "#bbdefb" }
+    ];
+
+    function addInstance() {
+      const container = document.createElement('div');
+      container.classList.add('instance');
+      container.setAttribute('data-theme-index', '0');
+
+      container.innerHTML = `
+        <button class="close-btn" onclick="removeThisInstance(this)">X</button>
+        <input type="text" placeholder="Name:" style="font-size: 1.2rem;" />
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <select onchange="updateTheme(this)">
+            ${themes.map(t => `<option value="${t.name}">${t.name}</option>`).join('')}
+          </select>
+          <button onclick="cycleTheme(this)">⟳</button>
+        </div>
+
+        <details open>
+          <summary style="color: ${themes[0].statsNotesColor};">Stats</summary>
+          <table>
+            <tr>${["STR", "DEX", "CON", "INT", "WIS", "CHA"].map(stat => `<th>${stat}</th>`).join('')}</tr>
+            <tr ondrop="drop(event)" ondragover="allowDrop(event)">${Array(6).fill('').map((_, index) => `<td><input id="cell-${instanceCount}-${index}" type="number" min="0" max="99" value="0" ondragstart="drag(event)" draggable="true" /></td>`).join('')}</tr>
+          </table>
+        </details>
+
+        <details>
+          <summary>Attributes</summary>
+          <table>
+            <tr>${["HP", "AC", "DC", "PP", "Ammo", "Charge"].map(stat => `<th><input type="text" value="${stat}" /></th>`).join('')}</tr>
+            <tr>${Array(6).fill('').map(() => `<td><input type="number" min="0" max="99" value="0" ondragstart="drag(event)" draggable="true" /></td>`).join('')}</tr>
+          </table>
+        </details>
+
+        <details>
+          <summary>Spell Slots</summary>
+          <table>
+            <tr>${Array.from({length: 9}, (_, i) => `<th>${i+1}</th>`).join('')}</tr>
+            <tr>${Array(9).fill('').map(() => `<td><input type="number" min="0" max="99" value="0" ondragstart="drag(event)" draggable="true" /></td>`).join('')}</tr>
+          </table>
+        </details>
+
+        <details>
+          <summary>Funds</summary>
+          <table>
+            <tr>${["P", "G", "E", "S", "C"].map(stat => `<th><input type="text" value="${stat}" style="color: ${themes[0].textColor};" /></th>`).join('')}</tr>
+            <tr>${Array(5).fill('').map(() => `<td><input type="number" min="0" max="99" value="0" ondragstart="drag(event)" draggable="true" /></td>`).join('')}</tr>
+          </table>
+        </details>
+
+        <br>
+        <button onclick="generateStats(this)">Generate</button>
+        <button onclick="resetInstance(this)">Reset</button>
+        <br><br>
+
+        <label style="color: ${themes[0].statsNotesColor};">Actions:</label>
+        <textarea placeholder="Actions:"></textarea>
+        <label style="color: ${themes[0].statsNotesColor};">Spells:</label>
+        <textarea placeholder="Spells:"></textarea>
+        <label style="color: ${themes[0].statsNotesColor};">Inventory:</label>
+        <textarea placeholder="Inventory:"></textarea>
+        <label style="color: ${themes[0].statsNotesColor};">Notes:</label>
+        <textarea placeholder="Notes:"></textarea>
+      `;
+
+      document.getElementById('canvas').appendChild(container);
+      instanceCount++;
+      updateTheme(container.querySelector('select'));
+    }
+
+    function removeInstance() {
+      const canvas = document.getElementById('canvas');
+      if (canvas.lastChild) {
+        canvas.removeChild(canvas.lastChild);
+        instanceCount--;
+      }
+    }
+
+    function removeThisInstance(button) {
+      const instance = button.closest('.instance');
+      instance.remove();
+      instanceCount--;
+    }
+
+    function resetInstance(button) {
+      const instance = button.closest('.instance');
+      instance.querySelectorAll('input[type="number"]').forEach(el => el.value = 0);
+      instance.querySelectorAll('input[type="text"]:not([value]), textarea').forEach(el => el.value = '');
+      instance.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+      updateTheme(instance.querySelector('select'));
+    }
+
+    function generateStats(button) {
+      const instance = button.closest('.instance');
+      const firstRowInputs = instance.querySelectorAll('details:nth-of-type(1) tr:nth-of-type(2) input');
+      const spellSlotInputs = instance.querySelectorAll('details:nth-of-type(3) table tr:nth-of-type(2) input');
+
+      firstRowInputs.forEach(input => {
+        const rolls = Array.from({length: 4}, () => Math.floor(Math.random() * 6 + 1));
+        const sorted = [...rolls].sort((a, b) => b - a);
+        const dropped = sorted[3];
+        const sum = sorted.slice(0, 3).reduce((a, b) => a + b, 0);
+        input.value = sum;
+        input.title = `${sorted.slice(0, 3).join(',')},(${dropped})`;
+      });
+
+      spellSlotInputs.forEach(input => {
+        input.value = 0;
+      });
+    }
+
+    function updateTheme(select) {
+      const instance = select.closest('.instance');
+      const theme = themes.find(t => t.name === select.value);
+
+      instance.style.backgroundColor = theme.primary;
+      instance.style.borderColor = theme.secondary;
+      instance.style.color = theme.accent;
+      instance.querySelectorAll('input[type="text"], .instance select, input[type="number"], textarea').forEach(el => {
+        el.style.backgroundColor = theme.grid;
+        el.style.color = theme.textColor;
+      });
+      instance.querySelectorAll('th, td').forEach(el => {
+        el.style.backgroundColor = theme.grid;
+        el.style.color = theme.textColor;
+      });
+      instance.querySelectorAll('th').forEach(el => {
+        el.style.backgroundColor = theme.tableHeader;
+        el.style.color = theme.textColor;
+      });
+      instance.querySelectorAll('th input[type="text"]').forEach(el => {
+        el.style.color = theme.textColor;
+      });
+
+      instance.querySelectorAll('details > summary').forEach(summary => {
+        summary.style.color = theme.statsNotesColor;
+      });
+      instance.querySelectorAll('label').forEach(label => {
+        label.style.color = theme.statsNotesColor;
+      });
+
+      if (theme.titleColor) {
+        instance.querySelectorAll('details > summary').forEach(summary => {
+          summary.style.color = theme.titleColor;
+        });
+      } else {
+        instance.querySelectorAll('details > summary').forEach(summary => {
+          summary.style.color = theme.statsNotesColor;
+        });
+      }
+    }
+
+    function cycleTheme(button) {
+      const instance = button.closest('.instance');
+      let index = parseInt(instance.getAttribute('data-theme-index'));
+      index = (index + 1) % themes.length;
+      instance.setAttribute('data-theme-index', index);
+      const select = instance.querySelector('select');
+      select.selectedIndex = index;
+      updateTheme(select);
+    }
+
+    function allowDrop(event) {
+      event.preventDefault();
+    }
+
+    function drag(event) {
+      event.dataTransfer.setData("text", event.target.id);
+    }
+
+    function drop(event) {
+      event.preventDefault();
+      const data = event.dataTransfer.getData("text");
+      const draggedElement = document.getElementById(data);
+      const targetElement = event.target;
+      if (targetElement.tagName === "INPUT" && targetElement.type === "number") {
+        const tempValue = targetElement.value;
+        targetElement.value = draggedElement.value;
+        draggedElement.value = tempValue;
+      }
+    }
+
+    window.onload = () => {
+      addInstance();
+    }
+  </script>
 </body>
 </html>
