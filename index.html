@@ -134,6 +134,24 @@
             ${themes.map(t => `<option value="${t.name}">${t.name}</option>`).join('')}
           </select>
           <button onclick="cycleTheme(this)">⟳</button>
+          <!-- New Dropdown Menu for Screen51 Themes -->
+          <select id="screen51-themes" onchange="switchTheme(this)">
+            <option value="">Select Theme</option>
+            <option value="Default">Default</option>
+            <option value="white">White</option>
+            <option value="gray">Gray</option>
+            <option value="black">Black</option>
+            <option value="brown">Brown</option>
+            <option value="red">Red</option>
+            <option value="orange">Orange</option>
+            <option value="yellow">Yellow</option>
+            <option value="green">Green</option>
+            <option value="blue">Blue</option>
+            <option value="indigo">Indigo</option>
+            <option value="violet">Violet</option>
+            <option value="pink">Pink</option>
+          </select>
+          <button onclick="cycleScreen51Theme(this)">⟳</button>
         </div>
 
         <details open>
@@ -278,6 +296,31 @@
       const select = instance.querySelector('select');
       select.selectedIndex = index;
       updateTheme(select);
+    }
+
+    function cycleScreen51Theme(button) {
+      const instance = button.closest('.instance');
+      const select = instance.querySelector('#screen51-themes');
+      let index = select.selectedIndex;
+      index = (index + 1) % select.options.length;
+      select.selectedIndex = index;
+      switchTheme(select);
+    }
+
+    function switchTheme(select) {
+      const instance = select.closest('.instance');
+      const selectedTheme = select.value;
+      // Change the instance background color to the title of the option
+      instance.style.backgroundColor = selectedTheme;
+      // Ensure the fields are white and the fonts are black
+      instance.querySelectorAll('input[type="text"], .instance select, input[type="number"], textarea').forEach(el => {
+        el.style.backgroundColor = "#fff";
+        el.style.color = "#000";
+      });
+      instance.querySelectorAll('th, td').forEach(el => {
+        el.style.backgroundColor = "#fff";
+        el.style.color = "#000";
+      });
     }
 
     function allowDrop(event) {
